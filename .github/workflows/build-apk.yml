@@ -13,18 +13,88 @@ jobs:
       contents: read
     steps:
     - uses: actions/checkout@v4
+
     - name: Set up JDK 21
       uses: actions/setup-java@v4
       with:
         java-version: '21'
         distribution: 'temurin'
         cache: gradle
-    - name: Grant execute permission for gradlew
-      run: chmod +x gradlew
-    - name: Build Debug APK
-      run: ./gradlew assembleDebug
+
+    - name: Verify Build Environment
+      run: |
+        echo "::group::Environment Information"
+        echo "Java Version:"
+        java -version
+        echo ""
+        echo "Gradle Version:"
+        ./gradlew --version
+        echo ""
+        echo "Build Environment:"
+        echo "  OS: $(uname -s)"
+        echo "  Architecture: $(uname -m)"
+        echo "  Available Memory: $(free -h | awk '/^Mem:/ {print $2}')"
+        echo "  Available Disk: $(df -h . | awk 'NR==2 {print $4}')"
+        echo "::endgroup::"
+
+    - name: Grant execute permission for gradlew and scripts
+      run: |
+        chmod +x gradlew
+        chmod +x scripts/monitor-build.sh
+
+    - name: Build Debug APK with Active Monitoring
+      run: |
+        echo "::group::Active Build Monitoring"
+        echo "Starting monitored build at $(date '+%Y-%m-%d %H:%M:%S')"
+        echo ""
+
+        # Run the monitoring script
+        ./scripts/monitor-build.sh assembleDebug
+
+        BUILD_STATUS=$?
+        echo ""
+        echo "::endgroup::"
+
+        if [ $BUILD_STATUS -ne 0 ]; then
+          echo "::error::Build failed with exit code $BUILD_STATUS"
+          exit $BUILD_STATUS
+        fi
+
+        echo "::notice::Build completed successfully"
+
+    - name: Verify APK Output
+      run: |
+        echo "::group::APK Verification"
+        APK_PATH="app/build/outputs/apk/debug/app-debug.apk"
+
+        if [ -f "$APK_PATH" ]; then
+          APK_SIZE=$(du -h "$APK_PATH" | cut -f1)
+          echo "✓ APK generated successfully"
+          echo "  Path: $APK_PATH"
+          echo "  Size: $APK_SIZE"
+
+          # Get APK info using aapt if available
+          if command -v aapt &> /dev/null; then
+            echo ""
+            echo "APK Information:"
+            aapt dump badging "$APK_PATH" | grep -E "package:|sdkVersion:|targetSdkVersion:" || true
+          fi
+        else
+          echo "::error::APK not found at expected path: $APK_PATH"
+          exit 1
+        fi
+        echo "::endgroup::"
+
     - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
         name: app-debug
         path: app/build/outputs/apk/debug/app-debug.apk
+
+    - name: Upload Build Logs
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: build-logs
+        path: build-monitor-*.log
+        if-no-files-found: ignore
