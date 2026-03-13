@@ -5,7 +5,7 @@
 # Covers files to be ignored for android development using Android Studio.
 
 # Built application files
-*.apk
+# *.apk - Commented out to allow APK files to be committed
 *.ap_
 *.aab
 
