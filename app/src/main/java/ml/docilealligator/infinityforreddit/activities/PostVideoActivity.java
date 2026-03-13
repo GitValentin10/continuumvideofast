@@ -32,6 +32,7 @@ import androidx.media3.common.util.Util;
 import androidx.media3.datasource.DataSource;
 import androidx.media3.datasource.DefaultDataSourceFactory;
 import androidx.media3.exoplayer.ExoPlayer;
+import ml.docilealligator.infinityforreddit.videoautoplay.OptimizedPlayerFactory;
 import androidx.media3.exoplayer.source.ProgressiveMediaSource;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
@@ -192,7 +193,10 @@ public class PostVideoActivity extends BaseActivity implements FlairBottomSheetF
 
         mGlide = Glide.with(this);
 
-        player = new ExoPlayer.Builder(this).build();
+        player = new ExoPlayer.Builder(this)
+                .setRenderersFactory(OptimizedPlayerFactory.createRenderersFactory(this))
+                .setLoadControl(OptimizedPlayerFactory.createLoadControl())
+                .build();
         binding.playerViewPostVideoActivity.setPlayer(player);
         dataSourceFactory = new DefaultDataSourceFactory(this,
                 Util.getUserAgent(this, "Infinity"));

@@ -36,6 +36,7 @@ import androidx.media3.datasource.cache.CacheDataSource;
 import androidx.media3.datasource.cache.SimpleCache;
 import androidx.media3.datasource.okhttp.OkHttpDataSource;
 import androidx.media3.exoplayer.DefaultRenderersFactory;
+import ml.docilealligator.infinityforreddit.videoautoplay.OptimizedPlayerFactory;
 import androidx.media3.exoplayer.ExoPlayer;
 import androidx.media3.exoplayer.source.ProgressiveMediaSource;
 import androidx.media3.exoplayer.trackselection.DefaultTrackSelector;
@@ -152,7 +153,8 @@ public class ViewImgurVideoFragment extends Fragment {
         TrackSelector trackSelector = new DefaultTrackSelector(activity);
         player = new ExoPlayer.Builder(activity)
                 .setTrackSelector(trackSelector)
-                .setRenderersFactory(new DefaultRenderersFactory(activity).setEnableDecoderFallback(true))
+                .setRenderersFactory(OptimizedPlayerFactory.createRenderersFactory(activity))
+                .setLoadControl(OptimizedPlayerFactory.createLoadControl())
                 .build();
         binding.getRoot().setPlayer(player);
         dataSourceFactory = new CacheDataSource.Factory().setCache(mSimpleCache)

@@ -185,7 +185,7 @@ abstract class AppModule {
     static SimpleCache provideSimpleCache(StandaloneDatabaseProvider standaloneDatabaseProvider,
                                           @Named("exo_player_cache") File exoPlayerCache) {
         return new SimpleCache(exoPlayerCache,
-                new LeastRecentlyUsedCacheEvictor(200 * 1024 * 1024),
+                new LeastRecentlyUsedCacheEvictor(512 * 1024 * 1024),
                 standaloneDatabaseProvider);
     }
 
