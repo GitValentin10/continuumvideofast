@@ -69,6 +69,7 @@ import androidx.media3.datasource.cache.CacheDataSource;
 import androidx.media3.datasource.cache.SimpleCache;
 import androidx.media3.datasource.okhttp.OkHttpDataSource;
 import androidx.media3.exoplayer.DefaultRenderersFactory;
+import ml.docilealligator.infinityforreddit.videoautoplay.OptimizedPlayerFactory;
 import androidx.media3.exoplayer.ExoPlayer;
 import androidx.media3.exoplayer.hls.HlsMediaSource;
 import androidx.media3.exoplayer.source.ProgressiveMediaSource;
@@ -420,7 +421,8 @@ public class ViewVideoActivity extends AppCompatActivity implements CustomFontRe
         trackSelector = new DefaultTrackSelector(this);
         player = new ExoPlayer.Builder(this)
                 .setTrackSelector(trackSelector)
-                .setRenderersFactory(new DefaultRenderersFactory(this).setEnableDecoderFallback(true))
+                .setRenderersFactory(OptimizedPlayerFactory.createRenderersFactory(this))
+                .setLoadControl(OptimizedPlayerFactory.createLoadControl())
                 .build();
 
         if (zoomable) {

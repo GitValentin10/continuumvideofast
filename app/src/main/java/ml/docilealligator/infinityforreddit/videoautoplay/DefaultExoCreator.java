@@ -70,9 +70,8 @@ public class DefaultExoCreator implements ExoCreator, MediaSourceEventListener {
         this.config = checkNotNull(config);
         mediaSourceBuilder = config.mediaSourceBuilder;
 
-        DefaultRenderersFactory tempFactory = new DefaultRenderersFactory(this.toro.context);
-        tempFactory.setExtensionRendererMode(config.extensionMode);
-        renderersFactory = tempFactory;
+        renderersFactory = OptimizedPlayerFactory.createRenderersFactory(
+                this.toro.context, config.extensionMode);
 
         DataSource.Factory baseFactory = config.dataSourceFactory;
         if (baseFactory == null) {
@@ -125,7 +124,8 @@ public class DefaultExoCreator implements ExoCreator, MediaSourceEventListener {
     public ExoPlayer createPlayer() {
         // Create a new TrackSelector for each player instance - they cannot be reused in media3
         TrackSelector trackSelector = new DefaultTrackSelector(toro.context);
-        return new ToroExoPlayer(toro.context, renderersFactory, trackSelector, new DefaultLoadControl(),
+        return new ToroExoPlayer(toro.context, renderersFactory, trackSelector,
+                OptimizedPlayerFactory.createLoadControl(),
                 new DefaultBandwidthMeter.Builder(toro.context).build(), Util.getCurrentOrMainLooper()).getPlayer();
     }
 
