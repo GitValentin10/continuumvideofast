@@ -57,6 +57,9 @@ This means you don't need to recompile it each time, or to use [ReVanced Manager
 # Setup
 See [SETUP.md](/SETUP.md)
 
+# Build Monitoring
+See [MONITORING.md](/MONITORING.md) for information about the active build monitoring system that tracks compilation progress in real-time.
+
 # FAQ
 See [FAQ.md](/FAQ.md)
 
