@@ -91,11 +91,6 @@ android {
         testInstrumentationRunnerArguments.put("REDDIT_CLIENT_ID", testProperties['REDDIT_CLIENT_ID'] ?: 'test_reddit_client_id_default')
     }
 
-    buildFeatures {
-        buildConfig = true
-        viewBinding = true
-    }
-
     buildTypes {
         release {
             minifyEnabled false
@@ -105,8 +100,6 @@ android {
             } else {
                 println("Warning: keystore.properties file not found. Skipping signing configuration for release.")
             }
-            minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
             resValue "string", "app_name", "Continuum"
         }
         minifiedRelease {
