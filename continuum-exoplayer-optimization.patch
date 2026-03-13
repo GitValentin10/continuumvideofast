@@ -1,0 +1,216 @@
+diff --git a/app/src/main/java/ml/docilealligator/infinityforreddit/AppModule.java b/app/src/main/java/ml/docilealligator/infinityforreddit/AppModule.java
+index 0fd0f3d2..55a53ce6 100644
+--- a/app/src/main/java/ml/docilealligator/infinityforreddit/AppModule.java
++++ b/app/src/main/java/ml/docilealligator/infinityforreddit/AppModule.java
+@@ -185,7 +185,7 @@ abstract class AppModule {
+     static SimpleCache provideSimpleCache(StandaloneDatabaseProvider standaloneDatabaseProvider,
+                                           @Named("exo_player_cache") File exoPlayerCache) {
+         return new SimpleCache(exoPlayerCache,
+-                new LeastRecentlyUsedCacheEvictor(200 * 1024 * 1024),
++                new LeastRecentlyUsedCacheEvictor(512 * 1024 * 1024),
+                 standaloneDatabaseProvider);
+     }
+ 
+diff --git a/app/src/main/java/ml/docilealligator/infinityforreddit/activities/PostVideoActivity.java b/app/src/main/java/ml/docilealligator/infinityforreddit/activities/PostVideoActivity.java
+index 16be891b..16a9fcac 100644
+--- a/app/src/main/java/ml/docilealligator/infinityforreddit/activities/PostVideoActivity.java
++++ b/app/src/main/java/ml/docilealligator/infinityforreddit/activities/PostVideoActivity.java
+@@ -32,6 +32,7 @@ import androidx.media3.common.util.Util;
+ import androidx.media3.datasource.DataSource;
+ import androidx.media3.datasource.DefaultDataSourceFactory;
+ import androidx.media3.exoplayer.ExoPlayer;
++import ml.docilealligator.infinityforreddit.videoautoplay.OptimizedPlayerFactory;
+ import androidx.media3.exoplayer.source.ProgressiveMediaSource;
+ import androidx.recyclerview.widget.LinearLayoutManager;
+ 
+@@ -192,7 +193,10 @@ public class PostVideoActivity extends BaseActivity implements FlairBottomSheetF
+ 
+         mGlide = Glide.with(this);
+ 
+-        player = new ExoPlayer.Builder(this).build();
++        player = new ExoPlayer.Builder(this)
++                .setRenderersFactory(OptimizedPlayerFactory.createRenderersFactory(this))
++                .setLoadControl(OptimizedPlayerFactory.createLoadControl())
++                .build();
+         binding.playerViewPostVideoActivity.setPlayer(player);
+         dataSourceFactory = new DefaultDataSourceFactory(this,
+                 Util.getUserAgent(this, "Infinity"));
+diff --git a/app/src/main/java/ml/docilealligator/infinityforreddit/activities/ViewVideoActivity.java b/app/src/main/java/ml/docilealligator/infinityforreddit/activities/ViewVideoActivity.java
+index f111da4a..6bacdf61 100644
+--- a/app/src/main/java/ml/docilealligator/infinityforreddit/activities/ViewVideoActivity.java
++++ b/app/src/main/java/ml/docilealligator/infinityforreddit/activities/ViewVideoActivity.java
+@@ -69,6 +69,7 @@ import androidx.media3.datasource.cache.CacheDataSource;
+ import androidx.media3.datasource.cache.SimpleCache;
+ import androidx.media3.datasource.okhttp.OkHttpDataSource;
+ import androidx.media3.exoplayer.DefaultRenderersFactory;
++import ml.docilealligator.infinityforreddit.videoautoplay.OptimizedPlayerFactory;
+ import androidx.media3.exoplayer.ExoPlayer;
+ import androidx.media3.exoplayer.hls.HlsMediaSource;
+ import androidx.media3.exoplayer.source.ProgressiveMediaSource;
+@@ -420,7 +421,8 @@ public class ViewVideoActivity extends AppCompatActivity implements CustomFontRe
+         trackSelector = new DefaultTrackSelector(this);
+         player = new ExoPlayer.Builder(this)
+                 .setTrackSelector(trackSelector)
+-                .setRenderersFactory(new DefaultRenderersFactory(this).setEnableDecoderFallback(true))
++                .setRenderersFactory(OptimizedPlayerFactory.createRenderersFactory(this))
++                .setLoadControl(OptimizedPlayerFactory.createLoadControl())
+                 .build();
+ 
+         if (zoomable) {
+diff --git a/app/src/main/java/ml/docilealligator/infinityforreddit/fragments/ViewImgurVideoFragment.java b/app/src/main/java/ml/docilealligator/infinityforreddit/fragments/ViewImgurVideoFragment.java
+index a99ee7ff..ca1d2e55 100644
+--- a/app/src/main/java/ml/docilealligator/infinityforreddit/fragments/ViewImgurVideoFragment.java
++++ b/app/src/main/java/ml/docilealligator/infinityforreddit/fragments/ViewImgurVideoFragment.java
+@@ -36,6 +36,7 @@ import androidx.media3.datasource.cache.CacheDataSource;
+ import androidx.media3.datasource.cache.SimpleCache;
+ import androidx.media3.datasource.okhttp.OkHttpDataSource;
+ import androidx.media3.exoplayer.DefaultRenderersFactory;
++import ml.docilealligator.infinityforreddit.videoautoplay.OptimizedPlayerFactory;
+ import androidx.media3.exoplayer.ExoPlayer;
+ import androidx.media3.exoplayer.source.ProgressiveMediaSource;
+ import androidx.media3.exoplayer.trackselection.DefaultTrackSelector;
+@@ -152,7 +153,8 @@ public class ViewImgurVideoFragment extends Fragment {
+         TrackSelector trackSelector = new DefaultTrackSelector(activity);
+         player = new ExoPlayer.Builder(activity)
+                 .setTrackSelector(trackSelector)
+-                .setRenderersFactory(new DefaultRenderersFactory(activity).setEnableDecoderFallback(true))
++                .setRenderersFactory(OptimizedPlayerFactory.createRenderersFactory(activity))
++                .setLoadControl(OptimizedPlayerFactory.createLoadControl())
+                 .build();
+         binding.getRoot().setPlayer(player);
+         dataSourceFactory = new CacheDataSource.Factory().setCache(mSimpleCache)
+diff --git a/app/src/main/java/ml/docilealligator/infinityforreddit/fragments/ViewRedditGalleryVideoFragment.java b/app/src/main/java/ml/docilealligator/infinityforreddit/fragments/ViewRedditGalleryVideoFragment.java
+index 27a13f44..3b5da590 100644
+--- a/app/src/main/java/ml/docilealligator/infinityforreddit/fragments/ViewRedditGalleryVideoFragment.java
++++ b/app/src/main/java/ml/docilealligator/infinityforreddit/fragments/ViewRedditGalleryVideoFragment.java
+@@ -36,6 +36,7 @@ import androidx.media3.datasource.cache.CacheDataSource;
+ import androidx.media3.datasource.cache.SimpleCache;
+ import androidx.media3.datasource.okhttp.OkHttpDataSource;
+ import androidx.media3.exoplayer.DefaultRenderersFactory;
++import ml.docilealligator.infinityforreddit.videoautoplay.OptimizedPlayerFactory;
+ import androidx.media3.exoplayer.ExoPlayer;
+ import androidx.media3.exoplayer.source.ProgressiveMediaSource;
+ import androidx.media3.exoplayer.trackselection.DefaultTrackSelector;
+@@ -154,7 +155,8 @@ public class ViewRedditGalleryVideoFragment extends Fragment {
+         TrackSelector trackSelector = new DefaultTrackSelector(activity);
+         player = new ExoPlayer.Builder(activity)
+                 .setTrackSelector(trackSelector)
+-                .setRenderersFactory(new DefaultRenderersFactory(activity).setEnableDecoderFallback(true))
++                .setRenderersFactory(OptimizedPlayerFactory.createRenderersFactory(activity))
++                .setLoadControl(OptimizedPlayerFactory.createLoadControl())
+                 .build();
+         binding.getPlayerView().setPlayer(player);
+         dataSourceFactory = new CacheDataSource.Factory().setCache(mSimpleCache)
+diff --git a/app/src/main/java/ml/docilealligator/infinityforreddit/videoautoplay/DefaultExoCreator.java b/app/src/main/java/ml/docilealligator/infinityforreddit/videoautoplay/DefaultExoCreator.java
+index 3318ac64..e8ce8475 100644
+--- a/app/src/main/java/ml/docilealligator/infinityforreddit/videoautoplay/DefaultExoCreator.java
++++ b/app/src/main/java/ml/docilealligator/infinityforreddit/videoautoplay/DefaultExoCreator.java
+@@ -70,9 +70,8 @@ public class DefaultExoCreator implements ExoCreator, MediaSourceEventListener {
+         this.config = checkNotNull(config);
+         mediaSourceBuilder = config.mediaSourceBuilder;
+ 
+-        DefaultRenderersFactory tempFactory = new DefaultRenderersFactory(this.toro.context);
+-        tempFactory.setExtensionRendererMode(config.extensionMode);
+-        renderersFactory = tempFactory;
++        renderersFactory = OptimizedPlayerFactory.createRenderersFactory(
++                this.toro.context, config.extensionMode);
+ 
+         DataSource.Factory baseFactory = config.dataSourceFactory;
+         if (baseFactory == null) {
+@@ -125,7 +124,8 @@ public class DefaultExoCreator implements ExoCreator, MediaSourceEventListener {
+     public ExoPlayer createPlayer() {
+         // Create a new TrackSelector for each player instance - they cannot be reused in media3
+         TrackSelector trackSelector = new DefaultTrackSelector(toro.context);
+-        return new ToroExoPlayer(toro.context, renderersFactory, trackSelector, new DefaultLoadControl(),
++        return new ToroExoPlayer(toro.context, renderersFactory, trackSelector,
++                OptimizedPlayerFactory.createLoadControl(),
+                 new DefaultBandwidthMeter.Builder(toro.context).build(), Util.getCurrentOrMainLooper()).getPlayer();
+     }
+ 
+diff --git a/app/src/main/java/ml/docilealligator/infinityforreddit/videoautoplay/OptimizedPlayerFactory.java b/app/src/main/java/ml/docilealligator/infinityforreddit/videoautoplay/OptimizedPlayerFactory.java
+new file mode 100644
+index 00000000..f6ea9789
+--- /dev/null
++++ b/app/src/main/java/ml/docilealligator/infinityforreddit/videoautoplay/OptimizedPlayerFactory.java
+@@ -0,0 +1,81 @@
++package ml.docilealligator.infinityforreddit.videoautoplay;
++
++import android.content.Context;
++
++import androidx.annotation.NonNull;
++import androidx.annotation.OptIn;
++import androidx.media3.common.util.UnstableApi;
++import androidx.media3.exoplayer.DefaultLoadControl;
++import androidx.media3.exoplayer.DefaultRenderersFactory;
++import androidx.media3.exoplayer.LoadControl;
++
++/**
++ * Centralized factory for optimized ExoPlayer components.
++ *
++ * Key optimizations:
++ * - bufferForPlaybackMs reduced from 2500ms → 500ms (video starts 5x sooner)
++ * - bufferForPlaybackAfterRebufferMs reduced from 5000ms → 1500ms (recovers faster after stall)
++ * - minBufferMs kept at 15s (enough to avoid stalls on decent connections)
++ * - maxBufferMs increased from 50s → 120s (buffers more ahead, fewer re-fetches)
++ * - prioritizeTimeOverSizeThresholds = true (start ASAP even if buffer is small in bytes)
++ * - Async MediaCodec queueing forced on (parallel decode/render, fewer dropped frames)
++ * - Decoder fallback enabled (graceful degradation on weak hardware)
++ */
++@UnstableApi
++public final class OptimizedPlayerFactory {
++
++    // --- Buffer tuning ---
++    // How much data before playback STARTS (default: 2500ms — way too conservative)
++    private static final int BUFFER_FOR_PLAYBACK_MS = 500;
++    // How much data before playback RESUMES after a rebuffer (default: 5000ms)
++    private static final int BUFFER_FOR_PLAYBACK_AFTER_REBUFFER_MS = 1500;
++    // Minimum buffer the player tries to maintain (default: 15000ms — keep it)
++    private static final int MIN_BUFFER_MS = 15_000;
++    // Maximum buffer the player will accumulate (default: 50000ms → raise to 2 minutes)
++    private static final int MAX_BUFFER_MS = 120_000;
++
++    private OptimizedPlayerFactory() {}
++
++    /**
++     * Returns an optimized LoadControl for feed autoplay and fullscreen video.
++     * Prioritizes fast time-to-first-frame over conservative buffering.
++     */
++    @NonNull
++    public static LoadControl createLoadControl() {
++        return new DefaultLoadControl.Builder()
++                .setBufferDurationsMs(
++                        MIN_BUFFER_MS,
++                        MAX_BUFFER_MS,
++                        BUFFER_FOR_PLAYBACK_MS,
++                        BUFFER_FOR_PLAYBACK_AFTER_REBUFFER_MS
++                )
++                .setPrioritizeTimeOverSizeThresholds(true)
++                .setBackBuffer(30_000, true) // keep 30s of played-back data, allow re-buffering from it
++                .build();
++    }
++
++    /**
++     * Returns a RenderersFactory with:
++     * - Async MediaCodec buffer queueing forced ON (runs decode on a dedicated thread)
++     * - Decoder fallback enabled (falls back to software decoder if HW fails)
++     */
++    @NonNull
++    public static DefaultRenderersFactory createRenderersFactory(@NonNull Context context) {
++        return new DefaultRenderersFactory(context)
++                .setEnableDecoderFallback(true)
++                .forceEnableMediaCodecAsynchronousQueueing();
++    }
++
++    /**
++     * Same as createRenderersFactory but with a specific extension renderer mode.
++     */
++    @NonNull
++    public static DefaultRenderersFactory createRenderersFactory(
++            @NonNull Context context,
++            @DefaultRenderersFactory.ExtensionRendererMode int extensionMode) {
++        return new DefaultRenderersFactory(context)
++                .setExtensionRendererMode(extensionMode)
++                .setEnableDecoderFallback(true)
++                .forceEnableMediaCodecAsynchronousQueueing();
++    }
++}
